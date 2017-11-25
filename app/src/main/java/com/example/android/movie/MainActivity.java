@@ -4,7 +4,6 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
@@ -53,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         protected List<Movie> doInBackground(Void... voids) {
 
             try {
-                URL url = NetworkUtils.builURL_Movies();
+                URL url = NetworkUtils.buildURL_Movies();
                 Log.i(TAG,url.toString());
                 String responseFromHttpUrl = NetworkUtils.getResponseFromHttpUrl(url);
                 JSONObject jsonObject = new JSONObject(responseFromHttpUrl);

@@ -1,25 +1,20 @@
 package com.example.android.movie.Utilities;
 
 import android.net.Uri;
-import android.util.Log;
-
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-
 public class NetworkUtils {
 
-    private static final String BASE_URL_IMG = "https://image.tmdb.org/t/p/w342";
+    //private static final String BASE_URL_IMG = "https://image.tmdb.org/t/p/w342";
     private static final String API_KEY = "1d6d44ed2156ccd55f118d5018edcfa2";
     private static final String TAG = NetworkUtils.class.getSimpleName();
     private static final String BASE_URL_MOVIES = "https://api.themoviedb.org/3/movie/popular";
 
-    public static URL builURL_Movies() {
+    public static URL buildURL_Movies() {
 
         Uri uri = Uri.parse(BASE_URL_MOVIES).buildUpon().appendQueryParameter("api_key", API_KEY).build();
         URL url = null;
@@ -27,7 +22,7 @@ public class NetworkUtils {
             url = new URL(uri.toString());
         } catch (IOException e) {
             e.printStackTrace();
-           // Log.i(TAG, url.toString());
+           return null;
         }
 
         return url;
@@ -58,7 +53,6 @@ public class NetworkUtils {
                 .url(url)
                 .build();
         Response response = client.newCall(request).execute();
-     //   Log.i(TAG, response.body().string());
 
         return response.body().string();
     }
