@@ -127,12 +127,12 @@ public class MainActivity extends AppCompatActivity {
         int itemId = item.getItemId();
         switch (itemId) {
             case R.id.popular_menu_item:
-                editor.putString("movie", "popular");
+                editor.putString("movie",getResources().getString(R.string.pref_movie_value_popular));
                 editor.apply();
                 new FetchMoviesData().execute(getResources().getString(R.string.pref_movie_value_popular));
                 return true;
             case R.id.top_rated_menu_item:
-                editor.putString("movie", "top_rated");
+                editor.putString("movie", getResources().getString(R.string.pref_movie_value_top_rated));
                 editor.apply();
                 new FetchMoviesData().execute(getResources().getString(R.string.pref_movie_value_top_rated));
                 return true;
