@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         return new AsyncTaskLoader<List<Movie>>(this) {
             private Movie movie;
             private List<Movie> movieList ;
-
+        //sadasd
             @Override
             protected void onStartLoading() {
                 showProgress();
