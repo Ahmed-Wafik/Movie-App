@@ -10,6 +10,7 @@
 
     <string name="action_setting">Settings</string>
     <string name="select_resource">Select (Popular or Top rated)movies</string>
+    <string name="favorites_label">Favorites</string>
 
 
 </resources>

@@ -1,23 +1,25 @@
-package com.example.android.movie;
+package com.example.android.movie.adapter;
 
 import android.content.Context;
-import android.net.Uri;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.android.movie.DetailActivity;
+import com.example.android.movie.R;
 import com.example.android.movie.Utilities.NetworkUtils;
-import com.example.android.movie.data.Movie;
+import com.example.android.movie.model.Movie;
 import com.squareup.picasso.Picasso;
+
 import java.util.List;
 
-public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.ItemViewHolder>{
+public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.ItemViewHolder> {
 
-    private  Context context;
+    private Context context;
     private List<Movie> movieList;
 
     public RecycleViewAdapter(Context context, List<Movie> movieList) {
@@ -36,12 +38,22 @@ public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.
     @Override
     public void onBindViewHolder(ItemViewHolder holder, int position) {
 
-        Movie movie = movieList.get(position);
+        final Movie movie = movieList.get(position);
         String title = movie.getTitle();
         String poster_path = movie.getPoster_path();
         String imagePath = NetworkUtils.buildURL_Image(poster_path);
 
         holder.title.setText(title);
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(context, DetailActivity.class);
+                intent.putExtra("data", movie);
+                context.startActivity(intent);
+
+
+            }
+        });
         Picasso.with(context)
                 .load(imagePath)
                 .into(holder.poster_image);
@@ -63,5 +75,7 @@ public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.
             title = itemView.findViewById(R.id.movie_title_TV);
 
         }
+
+
     }
 }

@@ -18,6 +18,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="com.example.android.movie.DetailActivity"
+            android:label="Movie database" />
+
+        <provider
+            android:name=".database.MoviesContentProvider"
+            android:authorities="com.example.android.movieApp"
+            android:exported="false" />
     </application>
 
 </manifest>

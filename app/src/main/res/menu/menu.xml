@@ -14,4 +14,10 @@
         android:orderInCategory="101"
         android:title="@string/pref_movie_label_top_rated"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/favorites"
+        android:orderInCategory="102"
+        android:title="@string/favorites_label"
+        app:showAsAction="never"
+        />
 </menu>
