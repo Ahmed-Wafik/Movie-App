@@ -1,4 +1,4 @@
-package com.example.android.movie.database;
+package com.example.android.database;
 
 import android.annotation.SuppressLint;
 import android.content.ContentProvider;
@@ -6,7 +6,6 @@ import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,9 +18,6 @@ import java.util.HashSet;
 public class MoviesContentProvider extends ContentProvider {
 
     public static final int MOVIES = 100;
-    public static final int MOVIE_BY_ID = 101;
-    static final int FAVORITES = 300;
-
 
     private static final UriMatcher sUriMatcher = buildUriMatcher();
     private static final String MOVIE_ID_SELECTION =
@@ -32,9 +28,6 @@ public class MoviesContentProvider extends ContentProvider {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
         uriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_MOVIES, MOVIES);
-        uriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_MOVIES + "/#", MOVIE_BY_ID);
-        uriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_MOVIES + "/" + MovieContract.PATH_FAVORITES, FAVORITES);
-
         return uriMatcher;
     }
 
@@ -56,55 +49,19 @@ public class MoviesContentProvider extends ContentProvider {
         }
     }
 
-    private Cursor getMovieById(Uri uri, String[] projection, String sortOrder) {
-        long id = MovieContract.MovieEntries.getIdFromUri(uri);
-        String selection = MOVIE_ID_SELECTION;
-        String[] selectionArgs = new String[]{Long.toString(id)};
-        return mDBHelper.getReadableDatabase().query(
-                MovieContract.MovieEntries.TABLE_NAME,
-                projection,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                sortOrder
-        );
-    }
 
-    private Cursor getMoviesFromReferenceTable(String tableName, String[] projection, String selection,
-                                               String[] selectionArgs, String sortOrder) {
-
-        SQLiteQueryBuilder sqLiteQueryBuilder = new SQLiteQueryBuilder();
-
-        // tableName INNER JOIN movies ON tableName.movie_id = movies._id
-        sqLiteQueryBuilder.setTables(
-                tableName + " INNER JOIN " + MovieContract.MovieEntries.TABLE_NAME +
-                        " ON " + tableName + "." + MovieContract.COLUMN_MOVIE_ID_KEY +
-                        " = " + MovieContract.MovieEntries.TABLE_NAME + "." + MovieContract.MovieEntries._ID
-        );
-
-        return sqLiteQueryBuilder.query(mDBHelper.getReadableDatabase(),
-                projection,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-    }
 
     @Nullable
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+
         final SQLiteDatabase db = mDBHelper.getReadableDatabase();
-
         int match = sUriMatcher.match(uri);
-
         Cursor cursor;
         checkColumns(projection);
+
         switch (match) {
             case MOVIES:
-
                 cursor = db.query(MovieContract.MovieEntries.TABLE_NAME,
                         projection,
                         selection,
@@ -112,13 +69,6 @@ public class MoviesContentProvider extends ContentProvider {
                         null,
                         null,
                         null);
-                break;
-            case MOVIE_BY_ID:
-                cursor = getMovieById(uri, projection, sortOrder);
-                break;
-            case FAVORITES:
-                cursor = getMoviesFromReferenceTable(MovieContract.Favorites.TABLE_NAME,
-                        projection, selection, selectionArgs, sortOrder);
                 break;
             default:
                 throw new UnsupportedOperationException("unknown Uri: " + uri);
@@ -136,12 +86,6 @@ public class MoviesContentProvider extends ContentProvider {
         switch (match) {
             case MOVIES:
                 return MovieContract.MovieEntries.CONTENT_DIR_TYPE;
-
-            case MOVIE_BY_ID:
-                return MovieContract.Favorites.CONTENT_DIR_TYPE;
-
-            case FAVORITES:
-                return MovieContract.MovieEntries.CONTENT_ITEM_TYPE;
             default:
                 return null;
         }
@@ -166,14 +110,6 @@ public class MoviesContentProvider extends ContentProvider {
                     throw new android.database.SQLException("Unknown Uri: " + uri);
                 }
                 break;
-            case FAVORITES:
-                id = db.insert(MovieContract.Favorites.TABLE_NAME, null, contentValues);
-                if (id > 0) {
-                    returnUri = MovieContract.Favorites.CONTENT_URI;
-                } else {
-                    throw new android.database.SQLException("Unknown Uri: " + uri);
-                }
-                break;
             default:
                 throw new UnsupportedOperationException("Unknown Uri: " + uri);
         }
@@ -193,16 +129,6 @@ public class MoviesContentProvider extends ContentProvider {
 
             case MOVIES:
                 numOfDeletedMovie = db.delete(MovieContract.MovieEntries.TABLE_NAME, s, strings);
-                break;
-
-            case MOVIE_BY_ID:
-                long id = MovieContract.MovieEntries.getIdFromUri(uri);
-                numOfDeletedMovie = db.delete(MovieContract.MovieEntries.TABLE_NAME,
-                        MOVIE_ID_SELECTION,
-                        new String[]{Long.toString(id)});
-                break;
-            case FAVORITES:
-                numOfDeletedMovie = db.delete(MovieContract.Favorites.TABLE_NAME, s, strings);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);

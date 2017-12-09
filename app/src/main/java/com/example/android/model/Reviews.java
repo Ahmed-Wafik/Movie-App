@@ -1,4 +1,4 @@
-package com.example.android.movie.model;
+package com.example.android.model;
 
 /**
  * Created by Ahmed Wafik Mohamed on 11/29/2017.

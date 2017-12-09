@@ -1,4 +1,4 @@
-package com.example.android.movie.database;
+package com.example.android.database;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -17,13 +17,11 @@ public class MovieDBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
 
         sqLiteDatabase.execSQL(MovieContract.MovieEntries.SQL_CREATE_TABLE);
-        sqLiteDatabase.execSQL(MovieContract.Favorites.SQL_CREATE_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.MovieEntries.TABLE_NAME);
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.Favorites.TABLE_NAME);
         onCreate(sqLiteDatabase);
     }
 }

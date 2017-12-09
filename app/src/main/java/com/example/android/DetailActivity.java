@@ -1,4 +1,4 @@
-package com.example.android.movie;
+package com.example.android;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
@@ -12,11 +12,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.movie.Utilities.NetworkUtils;
-import com.example.android.movie.adapter.CardViewAdapter;
-import com.example.android.movie.model.FavoriteServices;
-import com.example.android.movie.model.Movie;
-import com.example.android.movie.model.Reviews;
+import com.example.android.movie.R;
+import com.example.android.Utilities.NetworkUtils;
+import com.example.android.adapter.ReviewAdapter;
+import com.example.android.adapter.VideosAdapter;
+import com.example.android.model.FavoriteServices;
+import com.example.android.model.Movie;
+import com.example.android.model.Reviews;
+import com.example.android.model.Videos;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -36,14 +39,15 @@ import okhttp3.Response;
 
 public class DetailActivity extends AppCompatActivity implements Callback {
 
-    CardViewAdapter adapter;
-    RecyclerView recyclerView;
+    ReviewAdapter adapter;
+    RecyclerView recyclerView, videosRecycleView;
     ImageView posterImg, backdropImg;
     TextView movie_title, movie_rate, movie_release_date, movie_overview;
     ImageButton imageButton;
     String backdrop_url, poster_url, title, overview, vote_avg, release_date;
-
     FavoriteServices favoriteServices;
+
+    VideosAdapter videosAdapter;
 
 
     Movie movie;
@@ -64,11 +68,14 @@ public class DetailActivity extends AppCompatActivity implements Callback {
         movie_release_date = findViewById(R.id.movie_date);
         movie_overview = findViewById(R.id.movie_overview);
         recyclerView = findViewById(R.id.my_recycle_view);
+        videosRecycleView = findViewById(R.id.videos_recycle);
 
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         favoriteServices = new FavoriteServices(this);
 
+        videosRecycleView.setHasFixedSize(true);
+        videosRecycleView.setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
 
         movie = (Movie) getIntent().getSerializableExtra("data");
 
@@ -81,8 +88,8 @@ public class DetailActivity extends AppCompatActivity implements Callback {
         vote_avg = String.valueOf(movie.getVote_average());
         release_date = movie.getRelease_date();
 
-        Picasso.with(this).load(backdrop_url).into(backdropImg);
-        Picasso.with(this).load(poster_url).into(posterImg);
+        Picasso.with(this).load(backdrop_url).error(R.mipmap.ic_launcher).into(backdropImg);
+        Picasso.with(this).load(poster_url).error(R.mipmap.ic_launcher).into(posterImg);
 
         movie_title.setText(title);
         movie_overview.setText(overview);
@@ -110,10 +117,51 @@ public class DetailActivity extends AppCompatActivity implements Callback {
 
     private void getReviews(int id) {
         OkHttpClient client = new OkHttpClient();
-        URL url = NetworkUtils.builURL_Movie_Review(id);
-        Request request = new Request.Builder().url(url).build();
+        URL url = NetworkUtils.buildURL_Movie_Review(id);
+        URL video_URL = NetworkUtils.build_Movie_Videos(id);
 
+        Request request = new Request.Builder().url(url).build();
+        Request videoRequest = new Request.Builder().url(video_URL).build();
         client.newCall(request).enqueue(this);
+        client.newCall(videoRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                call.cancel();
+                Log.i(TAG, "Failed to fetch Reviews");
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+
+                final String string = response.body().string();
+                runOnUiThread(new Runnable() {
+                    Videos videos;
+                    List<Videos> videosList;
+
+                    @Override
+                    public void run() {
+                        videosList = new ArrayList<>();
+
+                        try {
+                            JSONObject jsonObject = new JSONObject(string);
+                            JSONArray jsonArray = jsonObject.getJSONArray("results");
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject object = jsonArray.getJSONObject(i);
+                                String key = object.getString("key");
+
+                                videos = new Videos(key);
+                                videosList.add(videos);
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        videosAdapter = new VideosAdapter(DetailActivity.this, videosList);
+                        videosRecycleView.setAdapter(videosAdapter);
+                    }
+                });
+
+            }
+        });
     }
 
     @Override
@@ -126,6 +174,7 @@ public class DetailActivity extends AppCompatActivity implements Callback {
     public void onResponse(Call call, Response response) throws IOException {
 
         final String respone = response.body().string();
+
         runOnUiThread(new Runnable() {
             Reviews reviews;
             List<Reviews> reviewsList;
@@ -150,7 +199,7 @@ public class DetailActivity extends AppCompatActivity implements Callback {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                adapter = new CardViewAdapter(DetailActivity.this, reviewsList);
+                adapter = new ReviewAdapter(DetailActivity.this, reviewsList);
                 recyclerView.setAdapter(adapter);
 
             }

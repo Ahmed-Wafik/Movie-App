@@ -1,54 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:card_view="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="10dp"
-    android:layout_marginBottom="16dp"
-    android:layout_marginTop="10dp">
+    android:layout_marginTop="5dp"
+    android:orientation="vertical">
 
-    <ScrollView
+    <android.support.v7.widget.CardView
+        android:id="@+id/card_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        card_view:ignore="UselessParent">
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="10dp"
+        card_view:cardUseCompatPadding="true">
 
-        <android.support.v7.widget.CardView
-            android:id="@+id/card_view"
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:card_view="http://schemas.android.com/tools"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@drawable/myrect"
+            android:orientation="vertical"
+            android:padding="20dp">
 
-            card_view:cardBackgroundColor="@color/color_white"
-            card_view:cardCornerRadius="10dp"
-            card_view:cardElevation="20dp"
-            card_view:cardUseCompatPadding="true">
-
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:card_view="http://schemas.android.com/tools"
+            <TextView
+                android:id="@+id/review_author"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingLeft="16dp"
+                android:layout_height="wrap_content"
+                android:text="author"
+                android:textColor="#000000"
+                android:textSize="19sp" />
 
-                android:orientation="vertical">
+            <TextView
+                android:id="@+id/review_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="20dp"
+                android:text="Content"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
 
-                <TextView
-                    android:id="@+id/review_author"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="author"
-                    android:textColor="#000000"
-                    android:textSize="19sp" />
-
-                <TextView
-                    android:id="@+id/review_content"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingLeft="20dp"
-                    android:text="Content"
-                    android:textSize="16sp" />
-            </LinearLayout>
-
-
-        </android.support.v7.widget.CardView>
-    </ScrollView>
 </FrameLayout>

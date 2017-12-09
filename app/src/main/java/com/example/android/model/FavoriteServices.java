@@ -1,9 +1,9 @@
-package com.example.android.movie.model;
+package com.example.android.model;
 
 import android.content.Context;
 import android.database.Cursor;
 
-import com.example.android.movie.database.MovieContract;
+import com.example.android.database.MovieContract;
 
 public class FavoriteServices {
 

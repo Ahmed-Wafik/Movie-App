@@ -1,4 +1,4 @@
-package com.example.android.movie.adapter;
+package com.example.android.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.CardView;
@@ -8,17 +8,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.example.android.movie.R;
-import com.example.android.movie.model.Reviews;
+import com.example.android.model.Reviews;
 import java.util.List;
 
 
 
-public class CardViewAdapter extends RecyclerView.Adapter<CardViewAdapter.CardViewHolder> {
+public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.CardViewHolder> {
 
     private List<Reviews> reviewsList;
     private Context context;
 
-    public CardViewAdapter(Context context, List<Reviews> reviewsList) {
+    public ReviewAdapter(Context context, List<Reviews> reviewsList) {
         this.reviewsList = reviewsList;
         this.context = context;
     }

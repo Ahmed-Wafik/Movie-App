@@ -1,34 +1,34 @@
-package com.example.android.movie;
+package com.example.android;
 
 import android.annotation.SuppressLint;
+import android.app.SearchManager;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-
-import com.example.android.movie.Utilities.NetworkUtils;
-import com.example.android.movie.adapter.RecycleViewAdapter;
-import com.example.android.movie.database.MovieContract;
-import com.example.android.movie.model.Movie;
-
+import com.example.android.Utilities.NetworkUtils;
+import com.example.android.adapter.MovieAdapter;
+import com.example.android.database.MovieContract;
+import com.example.android.model.Movie;
+import com.example.android.movie.R;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -38,29 +38,36 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity implements Callback {
 
     RecyclerView recyclerView;
-    RecycleViewAdapter adapter;
+    MovieAdapter adapter;
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
     ProgressBar progressBar;
     Movie movieFav;
     List<Movie> movieList;
     private String TAG = MainActivity.class.getSimpleName();
-
+    private SearchView searchView;
+    String path;
     @SuppressLint("CommitPrefEdits")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
+        // toolbar fancy stuff
+       // getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+       // getSupportActionBar().setTitle(R.string.action_search);
         sharedPreferences = getSharedPreferences("app", MODE_PRIVATE);
         editor = sharedPreferences.edit();
 
         progressBar = findViewById(R.id.progress);
-        recyclerView = findViewById(R.id.main_recycle_view);
+        recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
+
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
 
-        String path;
+
         if (sharedPreferences.contains("movie")) {
             path = sharedPreferences.getString("movie", null);
         } else {
@@ -71,7 +78,6 @@ public class MainActivity extends AppCompatActivity implements Callback {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     void run(String path) throws IOException {
@@ -83,9 +89,7 @@ public class MainActivity extends AppCompatActivity implements Callback {
                 .build();
         showProgress();
         client.newCall(request).enqueue(this);
-
     }
-
 
 //    private class FetchMoviesData extends AsyncTask<String, Integer, List<Movie>> {
 //        Movie movie;
@@ -93,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements Callback {
 //
 //        @Override
 //        protected void onPostExecute(List<Movie> movies) {
-//            RecycleViewAdapter adapter = new RecycleViewAdapter(MainActivity.this, movies);
+//            MovieAdapter adapter = new MovieAdapter(MainActivity.this, movies);
 //            recyclerView.setVisibility(View.VISIBLE);
 //            progressBar.setVisibility(View.GONE);
 //            recyclerView.setAdapter(adapter);
@@ -142,10 +146,59 @@ public class MainActivity extends AppCompatActivity implements Callback {
 //        }
 //    }
 
+
+    @Override
+    public void onBackPressed() {
+        if (!searchView.isIconified()) {
+            searchView.setIconified(true);
+            return;
+        }
+        super.onBackPressed();
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
+
+        getMenuInflater().inflate(R.menu.menu,menu);
+
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        searchView = (SearchView) menu.findItem(R.id.action_search)
+                .getActionView();
+        if (searchManager != null) {
+            searchView.setSearchableInfo(searchManager
+                    .getSearchableInfo(getComponentName()));
+        }
+        searchView.setMaxWidth(Integer.MAX_VALUE);
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                adapter.getFilter().filter(query);
+                adapter.notifyDataSetChanged();
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                adapter.getFilter().filter(newText);
+                adapter.notifyDataSetChanged();
+                return false;
+            }
+        });
+        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+            @Override
+            public boolean onClose() {
+                try {
+                    run(path);
+                } catch (IOException e) {
+                    e.printStackTrace();
+
+                }
+                return false;
+            }
+        });
+
+
         return true;
     }
 
@@ -192,7 +245,6 @@ public class MainActivity extends AppCompatActivity implements Callback {
 
                     if (cursor.moveToFirst()) {
                         do {
-
                             int id = cursor.getInt(cursor.getColumnIndex(MovieContract.MovieEntries._ID));
                             String title = cursor.getString(cursor.getColumnIndex(MovieContract.MovieEntries.COLUMN_TITLE));
                             String poster_path = cursor.getString(cursor.getColumnIndex(MovieContract.MovieEntries.COLUMN_POSTER_PATH));
@@ -209,7 +261,7 @@ public class MainActivity extends AppCompatActivity implements Callback {
                     }
                     Log.i(TAG, movieFav.getTitle());
 
-                    adapter = new RecycleViewAdapter(this, movieList);
+                    adapter = new MovieAdapter(this, movieList);
                     recyclerView.removeAllViews();
                     recyclerView.setAdapter(adapter);
                     return true;
@@ -247,7 +299,6 @@ public class MainActivity extends AppCompatActivity implements Callback {
 
                 try {
                     JSONObject jsonObject = new JSONObject(string);
-
                     JSONArray jsonArray = jsonObject.getJSONArray("results");
 
                     for (int i = 0; i < jsonArray.length(); i++) {
@@ -276,11 +327,10 @@ public class MainActivity extends AppCompatActivity implements Callback {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                adapter = new RecycleViewAdapter(MainActivity.this, movieList);
+                adapter = new MovieAdapter(MainActivity.this, movieList);
                 hideProgress();
                 recyclerView.setAdapter(adapter);
             }
         });
-
     }
 }
