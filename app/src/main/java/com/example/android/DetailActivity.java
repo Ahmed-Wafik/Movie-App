@@ -2,9 +2,12 @@ package com.example.android;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -12,7 +15,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.movie.R;
 import com.example.android.Utilities.NetworkUtils;
 import com.example.android.adapter.ReviewAdapter;
 import com.example.android.adapter.VideosAdapter;
@@ -20,6 +22,7 @@ import com.example.android.model.FavoriteServices;
 import com.example.android.model.Movie;
 import com.example.android.model.Reviews;
 import com.example.android.model.Videos;
+import com.example.android.movie.R;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -49,7 +52,6 @@ public class DetailActivity extends AppCompatActivity implements Callback {
 
     VideosAdapter videosAdapter;
 
-
     Movie movie;
     int movie_id;
     private final String TAG = DetailActivity.class.getSimpleName();
@@ -59,6 +61,9 @@ public class DetailActivity extends AppCompatActivity implements Callback {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        initCollapsingToolbar();
 
         imageButton = findViewById(R.id.fav_btn);
         posterImg = findViewById(R.id.poster_image);
@@ -75,11 +80,11 @@ public class DetailActivity extends AppCompatActivity implements Callback {
         favoriteServices = new FavoriteServices(this);
 
         videosRecycleView.setHasFixedSize(true);
-        videosRecycleView.setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
+        videosRecycleView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
 
         movie = (Movie) getIntent().getSerializableExtra("data");
 
-        backdrop_url = NetworkUtils.buildURL_Image(movie.getBackdrop_path());
+        backdrop_url = NetworkUtils.buildURL_Image_backdrop(movie.getBackdrop_path());
         poster_url = NetworkUtils.buildURL_Image(movie.getPoster_path());
 
         movie_id = movie.getId();
@@ -113,6 +118,35 @@ public class DetailActivity extends AppCompatActivity implements Callback {
             imageButton.setImageResource(R.drawable.ic_favorite_fill_50dp);
 
         }
+    }
+
+    private void initCollapsingToolbar() {
+
+        final CollapsingToolbarLayout collapsingToolbar =
+                findViewById(R.id.collapsing_toolbar);
+        collapsingToolbar.setTitle(" ");
+        AppBarLayout appBarLayout =  findViewById(R.id.appbar);
+        appBarLayout.setExpanded(true);
+
+        // hiding & showing the title when toolbar expanded & collapsed
+            appBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+            boolean isShow = false;
+            int scrollRange = -1;
+
+            @Override
+            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+                if (scrollRange == -1) {
+                    scrollRange = appBarLayout.getTotalScrollRange();
+                }
+                if (scrollRange + verticalOffset == 0) {
+                    collapsingToolbar.setTitle(title);
+                    isShow = true;
+                } else if (isShow) {
+                    collapsingToolbar.setTitle(" ");
+                    isShow = false;
+                }
+            }
+        });
     }
 
     private void getReviews(int id) {

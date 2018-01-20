@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements Callback {
     private String TAG = MainActivity.class.getSimpleName();
     private SearchView searchView;
     String path;
+
     @SuppressLint("CommitPrefEdits")
     @Override
     protected void onCreate(Bundle savedInstanceState) {

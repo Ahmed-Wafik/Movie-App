@@ -103,7 +103,21 @@ public class NetworkUtils {
         return uri.toString();
 
     }
+    public static String buildURL_Image_backdrop(String posterImage) {
 
+        Uri.Builder uri = new Uri.Builder();
+        if (posterImage !=null) {
+            uri.scheme("https")
+                    .authority("image.tmdb.org")
+                    .appendPath("t")
+                    .appendPath("p")
+                    .appendPath("w780")
+                    .appendPath(posterImage.substring(1))
+                    .build();
+        }
+        return uri.toString();
+
+    }
     public static String getResponseFromHttpUrl(URL url) throws IOException {
 
         OkHttpClient client = new OkHttpClient();
