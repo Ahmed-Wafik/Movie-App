@@ -9,9 +9,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.example.android.movie.R;
 import com.example.android.Utilities.NetworkUtils;
-import com.example.android.model.Videos;
+import com.example.android.model.Video;
+import com.example.android.movie.R;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -23,11 +23,11 @@ import java.util.List;
 public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideosVH> {
 
     private Context context;
-    private List<Videos> videosList;
+    private List<Video> videosResponseList;
 
-    public VideosAdapter(Context context, List<Videos> videosList) {
+    public VideosAdapter(Context context, List<Video> videosResponseList) {
         this.context = context;
-        this.videosList = videosList;
+        this.videosResponseList = videosResponseList;
     }
 
     @Override
@@ -41,7 +41,7 @@ public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideosVH> 
 
     @Override
     public void onBindViewHolder(VideosVH holder, int position) {
-        String key = videosList.get(position).getKey();
+        String key = videosResponseList.get(position).getKey();
         final String thumbnail = NetworkUtils.buildURL_thumbnail(key);
         final String uriYOUTUBE = NetworkUtils.buildURL_Youtube(key);
         Picasso.with(context).load(thumbnail).into(holder.imageView);
@@ -58,7 +58,7 @@ public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideosVH> 
 
     @Override
     public int getItemCount() {
-        return videosList.size();
+        return videosResponseList.size();
     }
 
     public class VideosVH extends RecyclerView.ViewHolder {

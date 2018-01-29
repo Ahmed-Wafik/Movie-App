@@ -6,6 +6,9 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+        <item name="android:textColorPrimary">@color/cardview_light_background</item>
+
     </style>
 
     <style name="AppThemeDark" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -14,6 +17,7 @@
 
         <item name="colorAccent">@color/grey_910</item>
         <item name="android:background">@color/grey</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
 
     </style>
 </resources>

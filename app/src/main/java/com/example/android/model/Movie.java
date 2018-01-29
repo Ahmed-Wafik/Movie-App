@@ -3,7 +3,8 @@ package com.example.android.model;
 
 import android.content.ContentValues;
 
-import com.example.android.database.MovieContract;
+
+import com.example.android.provider.MovieContract;
 import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
@@ -59,13 +60,13 @@ public class Movie implements Serializable {
     public ContentValues toContentValues(){
 
         ContentValues values = new ContentValues();
-        values.put(MovieContract.MovieEntries._ID, id);
-        values.put(MovieContract.MovieEntries.COLUMN_OVERVIEW, overview);
-        values.put(MovieContract.MovieEntries.COLUMN_RELEASE_DATE, release_date);
-        values.put(MovieContract.MovieEntries.COLUMN_POSTER_PATH, poster_path);
-        values.put(MovieContract.MovieEntries.COLUMN_TITLE, title);
-        values.put(MovieContract.MovieEntries.COLUMN_AVERAGE_VOTE, vote_average);
-        values.put(MovieContract.MovieEntries.COLUMN_BACKDROP_PATH, backdrop_path);
+        values.put(MovieContract.COLUMN_ID, id);
+        values.put(MovieContract.COLUMN_OVERVIEW, overview);
+        values.put(MovieContract.COLUMN_RELEASE_DATE, release_date);
+        values.put(MovieContract.COLUMN_POSTER_PATH, poster_path);
+        values.put(MovieContract.COLUMN_TITLE, title);
+        values.put(MovieContract.COLUMN_AVERAGE_VOTE, vote_average);
+        values.put(MovieContract.COLUMN_BACKDROP_PATH, backdrop_path);
 
         return values;
     }

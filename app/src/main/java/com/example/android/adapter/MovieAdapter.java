@@ -2,6 +2,9 @@ package com.example.android.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.support.v7.graphics.Palette;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +22,7 @@ import com.example.android.model.MovieResponse;
 import com.example.android.movie.R;
 import com.example.android.rest.ApiInterface;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import java.util.List;
 
@@ -37,6 +41,20 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ItemViewHold
         this.context = context;
         this.movieList = movieList;
         this.movieListFiltered = movieList;
+
+    }
+
+    private Palette.Swatch checkVibrantSwatch(Palette p) {
+        Palette.Swatch swatch = null;
+
+        if ((p.getVibrantSwatch()) != null) {
+            swatch = p.getVibrantSwatch();
+
+        } else if ((p.getMutedSwatch()) != null) {
+            swatch = p.getMutedSwatch();
+
+        }
+        return swatch;
     }
 
     @Override
@@ -48,7 +66,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ItemViewHold
     }
 
     @Override
-    public void onBindViewHolder(ItemViewHolder holder, int position) {
+    public void onBindViewHolder(final ItemViewHolder holder, int position) {
 
         final Movie movie = movieListFiltered.get(position);
         String title = movie.getTitle();
@@ -63,15 +81,44 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ItemViewHold
                 intent.putExtra("data", movie);
                 context.startActivity(intent);
 
-
             }
         });
-        if (!imagePath.isEmpty()){
-        Picasso.with(context)
-                .load(imagePath)
-                .error(R.mipmap.ic_launcher)
-                .into(holder.poster_image);
-    }}
+        if (!imagePath.isEmpty()) {
+
+            Target target = new Target() {
+                @Override
+                public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+
+                    holder.poster_image.setImageBitmap(bitmap);
+                    Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
+                        @Override
+                        public void onGenerated(Palette palette) {
+                            Palette.Swatch swatch = checkVibrantSwatch(palette);
+                            if (swatch != null) {
+                                holder.title.setBackgroundColor(swatch.getRgb());
+                                holder.title.setTextColor(swatch.getBodyTextColor());
+                            }
+                        }
+                    });
+                }
+
+                @Override
+                public void onBitmapFailed(Drawable errorDrawable) {
+
+                }
+
+                @Override
+                public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                }
+            };
+            Picasso.with(context)
+                    .load(imagePath)
+                    .error(R.mipmap.ic_launcher)
+                    .into(target);
+            }
+        }
+
 
     @Override
     public int getItemCount() {
@@ -81,28 +128,29 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ItemViewHold
     @Override
     public Filter getFilter() {
         return new Filter() {
-            ApiInterface apiInterface = NetworkUtils.getClient().create(ApiInterface.class);
-            Call<MovieResponse> call ;
+            ApiInterface apiInterface = NetworkUtils.getMoviesRequest().create(ApiInterface.class);
+            Call<MovieResponse> call;
+
             @Override
             protected FilterResults performFiltering(CharSequence charSequence) {
 
                 String charString = charSequence.toString().trim();
-                if (charString.isEmpty()){
+                if (charString.isEmpty()) {
                     movieListFiltered = movieList;
-                }else {
-                call = apiInterface.getFilteredMovies(NetworkUtils.getApiKey(), charString , "en-US");
-                call.enqueue(new Callback<MovieResponse>() {
-                    @Override
-                    public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
-                        movieListFiltered.clear();
-                        movieListFiltered = response.body().getResults();
-                    }
+                } else {
+                    call = apiInterface.getFilteredMovies(charString);
+                    call.enqueue(new Callback<MovieResponse>() {
+                        @Override
+                        public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                            movieListFiltered.clear();
+                            movieListFiltered = response.body().getResults();
+                        }
 
-                    @Override
-                    public void onFailure(Call<MovieResponse> call, Throwable t) {
-                        Log.e(TAG, t.toString());
-                    }
-                });
+                        @Override
+                        public void onFailure(Call<MovieResponse> call, Throwable t) {
+                            Log.e(TAG, t.toString());
+                        }
+                    });
                 }
                 FilterResults filterResults = new FilterResults();
                 filterResults.values = movieListFiltered;
@@ -112,18 +160,20 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ItemViewHold
             @Override
             protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
                 movieListFiltered = (List<Movie>) filterResults.values;
-            notifyDataSetChanged();
+                notifyDataSetChanged();
             }
         };
     }
 
     public class ItemViewHolder extends RecyclerView.ViewHolder {
 
-        ImageView poster_image;
-        TextView title;
+        private ImageView poster_image;
+        private TextView title;
+
 
         public ItemViewHolder(View itemView) {
             super(itemView);
+
             poster_image = itemView.findViewById(R.id.poster_image);
             title = itemView.findViewById(R.id.movie_title_TV);
 

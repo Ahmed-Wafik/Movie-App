@@ -12,19 +12,14 @@
         app:actionViewClass="android.support.v7.widget.SearchView"
         app:showAsAction="always" />
     <item
-        android:id="@+id/popular_menu_item"
-        android:orderInCategory="101"
-        android:title="@string/pref_movie_label_popular"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/top_rated_menu_item"
+        android:id="@+id/settings"
         android:orderInCategory="102"
-        android:title="@string/pref_movie_label_top_rated"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/favorites"
-        android:orderInCategory="103"
-        android:title="@string/favorites_label"
-        app:showAsAction="never" />
+        android:title="@string/action_setting"
+        app:showAsAction="always"
+        />
+    <!--<item-->
+        <!--android:id="@+id/favorites"-->
+        <!--android:orderInCategory="103"-->
+        <!--android:title="@string/favorites_label"-->
+        <!--app:showAsAction="never" />-->
 </menu>

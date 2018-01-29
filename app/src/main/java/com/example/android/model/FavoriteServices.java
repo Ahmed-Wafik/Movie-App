@@ -3,7 +3,8 @@ package com.example.android.model;
 import android.content.Context;
 import android.database.Cursor;
 
-import com.example.android.database.MovieContract;
+import com.example.android.provider.MovieContract;
+import com.example.android.provider.MovieProvider;
 
 public class FavoriteServices {
 
@@ -14,7 +15,7 @@ public class FavoriteServices {
     }
 
     public void addToFavorite(Movie movie) {
-        context.getContentResolver().insert(MovieContract.MovieEntries.CONTENT_URI, movie.toContentValues());
+        context.getContentResolver().insert(MovieProvider.FavoriteMovies.CONTENT_URI, movie.toContentValues());
 
 //        ContentValues contentValues = new ContentValues();
 //        contentValues.put(MovieContract.COLUMN_MOVIE_ID_KEY, movie.getId());
@@ -26,8 +27,8 @@ public class FavoriteServices {
 //        context.getContentResolver().delete(MovieContract.Favorites.CONTENT_URI,
 //                MovieContract.COLUMN_MOVIE_ID_KEY + " = " + movie.getId(),
 //                null);
-        context.getContentResolver().delete(MovieContract.MovieEntries.CONTENT_URI,
-                MovieContract.MovieEntries._ID + " = " + movie.getId(),
+        context.getContentResolver().delete(MovieProvider.FavoriteMovies.CONTENT_URI,
+                MovieContract.COLUMN_ID+ " = " + movie.getId(),
                 null);
 
     }
@@ -41,9 +42,9 @@ public class FavoriteServices {
 //                null,
 //                null);
         Cursor cursor = context.getContentResolver()
-                .query(MovieContract.MovieEntries.CONTENT_URI,
-                        MovieContract.MovieEntries.getColumns(),
-                        MovieContract.MovieEntries._ID + " = " + movie.getId(),
+                .query(MovieProvider.FavoriteMovies.CONTENT_URI,
+                        MovieContract.getColumns(),
+                        MovieContract.COLUMN_ID + " = " + movie.getId(),
                         null,
                         null);
 

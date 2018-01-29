@@ -5,13 +5,16 @@
 
         <item>@string/pref_movie_label_popular</item>
         <item>@string/pref_movie_label_top_rated</item>
+        <item>@string/favorites_label</item>
     </string-array>
     <string-array name="pref_movie_option_values">
 
         <item>@string/pref_movie_value_popular</item>
         <item>@string/pref_movie_value_top_rated</item>
+        <item>@string/favorites_value</item>
 
     </string-array>
+
 
 
 </resources>

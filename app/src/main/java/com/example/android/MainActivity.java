@@ -3,9 +3,11 @@ package com.example.android;
 import android.annotation.SuppressLint;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,50 +19,48 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-import com.example.android.Utilities.NetworkUtils;
-import com.example.android.adapter.MovieAdapter;
-import com.example.android.database.MovieContract;
-import com.example.android.model.Movie;
-import com.example.android.movie.R;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
-public class MainActivity extends AppCompatActivity implements Callback {
+import com.example.android.Utilities.NetworkUtils;
+import com.example.android.adapter.FavoriteAdapter;
+import com.example.android.adapter.MovieAdapter;
+import com.example.android.model.Movie;
+import com.example.android.model.MovieResponse;
+import com.example.android.movie.R;
+import com.example.android.provider.MovieProvider;
+import com.example.android.rest.ApiInterface;
+
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+public class MainActivity extends AppCompatActivity {
 
     RecyclerView recyclerView;
     MovieAdapter adapter;
     SharedPreferences sharedPreferences;
-    SharedPreferences.Editor editor;
     ProgressBar progressBar;
-    Movie movieFav;
-    List<Movie> movieList;
     private String TAG = MainActivity.class.getSimpleName();
     private SearchView searchView;
     String path;
+
+    private ApiInterface apiInterface;
 
     @SuppressLint("CommitPrefEdits")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         // toolbar fancy stuff
-       // getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-       // getSupportActionBar().setTitle(R.string.action_search);
-        sharedPreferences = getSharedPreferences("app", MODE_PRIVATE);
-        editor = sharedPreferences.edit();
+        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        // getSupportActionBar().setTitle(R.string.action_search);
+
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         progressBar = findViewById(R.id.progress);
         recyclerView = findViewById(R.id.recycler_view);
@@ -69,27 +69,13 @@ public class MainActivity extends AppCompatActivity implements Callback {
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
 
 
-        if (sharedPreferences.contains("movie")) {
-            path = sharedPreferences.getString("movie", null);
-        } else {
-            path = sharedPreferences.getString("movie", getResources().getString(R.string.pref_movie_value_top_rated));
-        }
-        try {
-            run(path);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+        apiInterface = NetworkUtils.getMoviesRequest().create(ApiInterface.class);
 
-    void run(String path) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        URL url = NetworkUtils.buildURL_Movies(path);
-        assert url != null;
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
+        path = sharedPreferences.getString(getString(R.string.pref_selection_key), getString(R.string.pref_movie_value_popular));
         showProgress();
-        client.newCall(request).enqueue(this);
+        getRequestType(path);
+
+        Log.i(TAG, "On Create");
     }
 
 //    private class FetchMoviesData extends AsyncTask<String, Integer, List<Movie>> {
@@ -98,10 +84,10 @@ public class MainActivity extends AppCompatActivity implements Callback {
 //
 //        @Override
 //        protected void onPostExecute(List<Movie> movies) {
-//            MovieAdapter adapter = new MovieAdapter(MainActivity.this, movies);
+//            MovieAdapter reviewAdapter = new MovieAdapter(MainActivity.this, movies);
 //            recyclerView.setVisibility(View.VISIBLE);
 //            progressBar.setVisibility(View.GONE);
-//            recyclerView.setAdapter(adapter);
+//            recyclerView.setAdapter(reviewAdapter);
 //        }
 //
 //        @Override
@@ -147,7 +133,6 @@ public class MainActivity extends AppCompatActivity implements Callback {
 //        }
 //    }
 
-
     @Override
     public void onBackPressed() {
         if (!searchView.isIconified()) {
@@ -160,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements Callback {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
-        getMenuInflater().inflate(R.menu.menu,menu);
+        getMenuInflater().inflate(R.menu.menu, menu);
 
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
         searchView = (SearchView) menu.findItem(R.id.action_search)
@@ -171,34 +156,35 @@ public class MainActivity extends AppCompatActivity implements Callback {
         }
         searchView.setMaxWidth(Integer.MAX_VALUE);
 
+
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 adapter.getFilter().filter(query);
                 adapter.notifyDataSetChanged();
-                return false;
+                return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                adapter.getFilter().filter(newText);
-                adapter.notifyDataSetChanged();
-                return false;
+//                adapter.getFilter().filter(newText);
+//                adapter.notifyDataSetChanged();
+       //         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+               return false;
             }
+
         });
+
+
         searchView.setOnCloseListener(new SearchView.OnCloseListener() {
             @Override
             public boolean onClose() {
-                try {
-                    run(path);
-                } catch (IOException e) {
-                    e.printStackTrace();
 
-                }
+                getRequestType(path);
                 return false;
             }
-        });
 
+        });
 
         return true;
     }
@@ -208,65 +194,60 @@ public class MainActivity extends AppCompatActivity implements Callback {
         super.onStart();
         Log.i(TAG, "On start");
 
+        String string = sharedPreferences.getString(getString(R.string.pref_selection_key), getString(R.string.pref_movie_value_popular));
+       // getRequestType(string);
+
+
     }
 
     @SuppressLint("Recycle")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
+
         switch (itemId) {
-            case R.id.popular_menu_item:
-                editor.putString("movie", getResources().getString(R.string.pref_movie_value_popular));
-                editor.apply();
-                try {
-                    run(getResources().getString(R.string.pref_movie_value_popular));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
+            case R.id.settings:
+                Intent intent = new Intent(this, MoviePreferenceActivity.class);
+                startActivity(intent);
                 return true;
-            case R.id.top_rated_menu_item:
-                editor.putString("movie", getResources().getString(R.string.pref_movie_value_top_rated));
-                editor.apply();
-                try {
-                    run(getResources().getString(R.string.pref_movie_value_top_rated));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            case R.id.favorites:
+//            case R.id.favorites:
+//
+//                Cursor cursor = getContentResolver().query(MovieProvider.FavoriteMovies.CONTENT_URI, com.example.android.provider.MovieContract.getColumns(), null, null, null);
+//                if (cursor == null) {
+//                    Toast.makeText(this, "There is error in cursor", Toast.LENGTH_SHORT).show();
+//                } else if (cursor.getCount() < 1) {
+//                    Toast.makeText(this, "There is no Favorite movies ", Toast.LENGTH_SHORT).show();
+//                } else if (cursor.getCount() > 1) {
+//
+//                    movieList = new ArrayList<>();
+//
+//                    if (cursor.moveToFirst()) {
+//                        do {
+//                            int id = cursor.getInt(cursor.getColumnIndex(MovieContract.COLUMN_ID));
+//                            String title = cursor.getString(cursor.getColumnIndex(MovieContract.COLUMN_TITLE));
+//                            String poster_path = cursor.getString(cursor.getColumnIndex(MovieContract.COLUMN_POSTER_PATH));
+//                            String overview = cursor.getString(cursor.getColumnIndex(MovieContract.COLUMN_OVERVIEW));
+//                            String backdrop_path = cursor.getString(cursor.getColumnIndex(MovieContract.COLUMN_BACKDROP_PATH));
+//                            String release_date = cursor.getString(cursor.getColumnIndex(MovieContract.COLUMN_RELEASE_DATE));
+//                            float vote_avg = cursor.getFloat(cursor.getColumnIndex(MovieContract.COLUMN_AVERAGE_VOTE));
+//
+//                            movieFav = new Movie(id, vote_avg, title, poster_path, backdrop_path, overview, release_date);
+//
+//                            movieList.add(movieFav);
+//
+//                        } while (cursor.moveToNext());
+//                        Log.i(TAG, movieFav.getTitle());
+//
+//                        adapter = new MovieAdapter(this, movieList);
+//                        recyclerView.removeAllViews();
+//                        recyclerView.setAdapter(adapter);
+//
+//                    }
+//                    cursor.close();
+//                }
+//                return true;
 
-                Cursor cursor = getContentResolver().query(MovieContract.MovieEntries.CONTENT_URI, MovieContract.MovieEntries.getColumns(), null, null, null);
-                if (cursor == null) {
-                    Toast.makeText(this, "There is error in cursor", Toast.LENGTH_SHORT).show();
-                } else if (cursor.getCount() < 1) {
-                    Toast.makeText(this, "There is no Favorite movies ", Toast.LENGTH_SHORT).show();
-                } else if (cursor.getCount() > 1) {
-
-                    movieList = new ArrayList<>();
-
-                    if (cursor.moveToFirst()) {
-                        do {
-                            int id = cursor.getInt(cursor.getColumnIndex(MovieContract.MovieEntries._ID));
-                            String title = cursor.getString(cursor.getColumnIndex(MovieContract.MovieEntries.COLUMN_TITLE));
-                            String poster_path = cursor.getString(cursor.getColumnIndex(MovieContract.MovieEntries.COLUMN_POSTER_PATH));
-                            String overview = cursor.getString(cursor.getColumnIndex(MovieContract.MovieEntries.COLUMN_OVERVIEW));
-                            String backdrop_path = cursor.getString(cursor.getColumnIndex(MovieContract.MovieEntries.COLUMN_BACKDROP_PATH));
-                            String release_date = cursor.getString(cursor.getColumnIndex(MovieContract.MovieEntries.COLUMN_RELEASE_DATE));
-                            float vote_avg = cursor.getFloat(cursor.getColumnIndex(MovieContract.MovieEntries.COLUMN_AVERAGE_VOTE));
-
-                            movieFav = new Movie(id, vote_avg, title, poster_path, backdrop_path, overview, release_date);
-
-                            movieList.add(movieFav);
-
-                        } while (cursor.moveToNext());
-                    }
-                    Log.i(TAG, movieFav.getTitle());
-
-                    adapter = new MovieAdapter(this, movieList);
-                    recyclerView.removeAllViews();
-                    recyclerView.setAdapter(adapter);
-                    return true;
-                }
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -282,56 +263,59 @@ public class MainActivity extends AppCompatActivity implements Callback {
         progressBar.setVisibility(View.GONE);
     }
 
-    @Override
-    public void onFailure(Call call, IOException e) {
-        call.cancel();
-    }
 
-    @Override
-    public void onResponse(Call call, Response response) throws IOException {
-        final String string = response.body().string();
-        this.runOnUiThread(new Runnable() {
-            Movie movie;
-            List<Movie> movieList = null;
+    public void getRequestType(String path) {
+        showProgress();
+        Log.i(TAG, path);
+        if (path.equals(getString(R.string.pref_movie_value_popular))) {
+            Call<MovieResponse> popularMovies = apiInterface.getPopularMovies();
+            popularMovies.enqueue(new Callback<MovieResponse>() {
+                @Override
+                public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                    List<Movie> results = response.body().getResults();
+                    adapter = new MovieAdapter(MainActivity.this, results);
+                    hideProgress();
+                    recyclerView.setAdapter(adapter);
 
-            @Override
-            public void run() {
-                movieList = new ArrayList<>();
-
-                try {
-                    JSONObject jsonObject = new JSONObject(string);
-                    JSONArray jsonArray = jsonObject.getJSONArray("results");
-
-                    for (int i = 0; i < jsonArray.length(); i++) {
-
-                        JSONObject object = jsonArray.getJSONObject(i);
-                        String poster_Path = object.getString(Movie.sPoster_path);
-                        String title = object.getString(Movie.sTitle);
-                        String backdrop_path = object.getString(Movie.sBackdrop_path);
-                        float vote_avg = (float) object.getDouble(Movie.sVote_Avg);
-                        int id = object.getInt(Movie.sId);
-                        String release_date = object.getString(Movie.sRelease_Date);
-                        String overview = object.getString(Movie.sOverview);
-                        movie = new Movie();
-
-                        movie.setVote_average(vote_avg);
-                        movie.setId(id);
-                        movie.setOverview(overview);
-                        movie.setRelease_date(release_date);
-                        movie.setPoster_path(poster_Path);
-                        movie.setTitle(title);
-                        movie.setBackdrop_path(backdrop_path);
-
-                        movieList.add(movie);
-                    }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
-                adapter = new MovieAdapter(MainActivity.this, movieList);
-                hideProgress();
-                recyclerView.setAdapter(adapter);
+
+                @Override
+                public void onFailure(Call<MovieResponse> call, Throwable t) {
+                    Log.i(TAG, t.toString());
+                    hideProgress();
+                }
+            });
+        } else if (path.equals(getString(R.string.pref_movie_value_top_rated))) {
+            Call<MovieResponse> topRatedMovie = apiInterface.getTopRatedMovies();
+            topRatedMovie.enqueue(new Callback<MovieResponse>() {
+                @Override
+                public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                    List<Movie> results = response.body().getResults();
+                    adapter = new MovieAdapter(MainActivity.this, results);
+                    hideProgress();
+                    recyclerView.setAdapter(adapter);
+                }
+
+                @Override
+                public void onFailure(Call<MovieResponse> call, Throwable t) {
+                    Log.i(TAG, t.toString());
+                    hideProgress();
+                }
+            });
+        } else if (path.equals(getString(R.string.favorites_value))) {
+            Cursor cursor = getContentResolver().query(MovieProvider.FavoriteMovies.CONTENT_URI, com.example.android.provider.MovieContract.getColumns(), null, null, null);
+
+            if (cursor == null) {
+                Toast.makeText(this, "Error loading favorites movies from database ", Toast.LENGTH_SHORT).show();
+            } else if (cursor.getCount() < 1) {
+                Toast.makeText(this, "There is no favorite movies" + cursor.getCount(), Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Favorites" + cursor.getCount(), Toast.LENGTH_SHORT).show();
+                FavoriteAdapter favoriteAdapter = new FavoriteAdapter(MainActivity.this);
+                favoriteAdapter.swapCursor(cursor);
+                recyclerView.setAdapter(favoriteAdapter);
             }
-        });
+        }
+        hideProgress();
     }
 }

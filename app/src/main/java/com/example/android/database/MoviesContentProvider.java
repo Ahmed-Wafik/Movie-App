@@ -20,8 +20,6 @@ public class MoviesContentProvider extends ContentProvider {
     public static final int MOVIES = 100;
 
     private static final UriMatcher sUriMatcher = buildUriMatcher();
-    private static final String MOVIE_ID_SELECTION =
-            MovieContract.MovieEntries.TABLE_NAME + "." + MovieContract.MovieEntries._ID + " = ? ";
     private MovieDBHelper mDBHelper;
 
     private static UriMatcher buildUriMatcher() {

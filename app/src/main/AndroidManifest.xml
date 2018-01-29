@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.android.movie">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -20,6 +21,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.SEARCH" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -27,11 +29,25 @@
 
         <activity
             android:name="com.example.android.DetailActivity"
-            android:label="Movie database" />
+            android:label="Movie database"
+            android:parentActivityName="com.example.android.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.android.MainActivity" />
 
+        </activity>
+
+        <activity
+            android:name="com.example.android.MoviePreferenceActivity"
+            android:parentActivityName="com.example.android.MainActivity"
+            tools:targetApi="jelly_bean">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.android.MainActivity" />
+        </activity>
 
         <provider
-            android:name="com.example.android.database.MoviesContentProvider"
+            android:name="com.example.android.provider.generated.MovieProvider"
             android:authorities="com.example.android.movieApp"
             android:exported="false" />
 

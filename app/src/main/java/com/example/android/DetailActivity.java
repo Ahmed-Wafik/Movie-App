@@ -2,6 +2,7 @@ package com.example.android;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -21,35 +22,31 @@ import com.example.android.adapter.VideosAdapter;
 import com.example.android.model.FavoriteServices;
 import com.example.android.model.Movie;
 import com.example.android.model.Reviews;
-import com.example.android.model.Videos;
+import com.example.android.model.ReviewsResponse;
+import com.example.android.model.Video;
+import com.example.android.model.VideosResponse;
 import com.example.android.movie.R;
+import com.example.android.rest.ApiInterface;
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
-public class DetailActivity extends AppCompatActivity implements Callback {
 
-    ReviewAdapter adapter;
-    RecyclerView recyclerView, videosRecycleView;
+public class DetailActivity extends AppCompatActivity  {
+
+    ReviewAdapter reviewAdapter;
+    RecyclerView  videosRecycleView , reviewsRecycleView;
     ImageView posterImg, backdropImg;
     TextView movie_title, movie_rate, movie_release_date, movie_overview;
     ImageButton imageButton;
     String backdrop_url, poster_url, title, overview, vote_avg, release_date;
     FavoriteServices favoriteServices;
 
+    ApiInterface apiInterface;
     VideosAdapter videosAdapter;
 
     Movie movie;
@@ -63,6 +60,8 @@ public class DetailActivity extends AppCompatActivity implements Callback {
         setContentView(R.layout.activity_detail);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         initCollapsingToolbar();
 
         imageButton = findViewById(R.id.fav_btn);
@@ -72,15 +71,17 @@ public class DetailActivity extends AppCompatActivity implements Callback {
         movie_rate = findViewById(R.id.movie_rate);
         movie_release_date = findViewById(R.id.movie_date);
         movie_overview = findViewById(R.id.movie_overview);
-        recyclerView = findViewById(R.id.my_recycle_view);
+        reviewsRecycleView = findViewById(R.id.reviews_recycle);
         videosRecycleView = findViewById(R.id.videos_recycle);
 
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
         favoriteServices = new FavoriteServices(this);
 
         videosRecycleView.setHasFixedSize(true);
         videosRecycleView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+
+        reviewsRecycleView.setLayoutManager(new LinearLayoutManager(this));
+
+        apiInterface = NetworkUtils.getMoviesRequest().create(ApiInterface.class);
 
         movie = (Movie) getIntent().getSerializableExtra("data");
 
@@ -101,8 +102,9 @@ public class DetailActivity extends AppCompatActivity implements Callback {
         movie_rate.setText(vote_avg + "/10");
         movie_release_date.setText(release_date);
 
+        getVideos(movie_id);
         getReviews(movie_id);
-        //updateImage();
+
     }
 
     @Override
@@ -149,96 +151,43 @@ public class DetailActivity extends AppCompatActivity implements Callback {
         });
     }
 
-    private void getReviews(int id) {
-        OkHttpClient client = new OkHttpClient();
-        URL url = NetworkUtils.buildURL_Movie_Review(id);
-        URL video_URL = NetworkUtils.build_Movie_Videos(id);
-
-        Request request = new Request.Builder().url(url).build();
-        Request videoRequest = new Request.Builder().url(video_URL).build();
-        client.newCall(request).enqueue(this);
-        client.newCall(videoRequest).enqueue(new Callback() {
+    private void getVideos(int id){
+        Call<VideosResponse> videosMovies = apiInterface.getVideosMovies(id);
+        videosMovies.enqueue(new Callback<VideosResponse>() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onResponse(@NonNull Call<VideosResponse> call, @NonNull Response<VideosResponse> response) {
+
+                List<Video> results = response.body().getResults();
+                videosAdapter = new VideosAdapter(DetailActivity.this,results);
+                videosRecycleView.setAdapter(videosAdapter);
+            }
+
+            @Override
+            public void onFailure(Call<VideosResponse> call, Throwable t) {
+            call.cancel();
+            Log.i(TAG,"Error loading Movies Videos");
+            }
+        });
+    }
+    private void getReviews(int id){
+
+        Call<ReviewsResponse> reviewsMovies = apiInterface.getReviewsMovies(id);
+        reviewsMovies.enqueue(new Callback<ReviewsResponse>() {
+            @Override
+            public void onResponse(Call<ReviewsResponse> call, Response<ReviewsResponse> response) {
+                List<Reviews> results = response.body().getResults();
+
+                reviewAdapter = new ReviewAdapter(DetailActivity.this,results);
+                reviewsRecycleView.setAdapter(reviewAdapter);
+
+            }
+
+            @Override
+            public void onFailure(Call<ReviewsResponse> call, Throwable t) {
+                Log.i(TAG,"Error Loading reviews "+t.toString());
                 call.cancel();
-                Log.i(TAG, "Failed to fetch Reviews");
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-
-                final String string = response.body().string();
-                runOnUiThread(new Runnable() {
-                    Videos videos;
-                    List<Videos> videosList;
-
-                    @Override
-                    public void run() {
-                        videosList = new ArrayList<>();
-
-                        try {
-                            JSONObject jsonObject = new JSONObject(string);
-                            JSONArray jsonArray = jsonObject.getJSONArray("results");
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject object = jsonArray.getJSONObject(i);
-                                String key = object.getString("key");
-
-                                videos = new Videos(key);
-                                videosList.add(videos);
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                        videosAdapter = new VideosAdapter(DetailActivity.this, videosList);
-                        videosRecycleView.setAdapter(videosAdapter);
-                    }
-                });
-
             }
         });
-    }
-
-    @Override
-    public void onFailure(Call call, IOException e) {
-        call.cancel();
-        Log.i(TAG, "Failed to fetch Reviews");
-    }
-
-    @Override
-    public void onResponse(Call call, Response response) throws IOException {
-
-        final String respone = response.body().string();
-
-        runOnUiThread(new Runnable() {
-            Reviews reviews;
-            List<Reviews> reviewsList;
-
-            @Override
-            public void run() {
-
-                reviewsList = new ArrayList<>();
-                try {
-                    JSONObject jsonObject = new JSONObject(respone);
-                    JSONArray jsonArray = jsonObject.getJSONArray("results");
-
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject object = jsonArray.getJSONObject(i);
-                        String author = object.getString(Reviews.sAUTHOR);
-                        String content = object.getString(Reviews.sCONTENT);
-                        String id = object.getString(Reviews.sID);
-                        reviews = new Reviews(author, content);
-                        reviewsList.add(reviews);
-                    }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                adapter = new ReviewAdapter(DetailActivity.this, reviewsList);
-                recyclerView.setAdapter(adapter);
-
-            }
-        });
-
     }
 
     public void imageButton(View view) {
